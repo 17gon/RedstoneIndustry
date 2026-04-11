@@ -1,0 +1,9 @@
+name: RedstoneIndustry
+version: '${version}'
+
+main: net.craftoriya.redstoneIndustry.RedstoneIndustry
+api-version: '26.1.2'
+load: POSTWORLD
+
+depend:
+  - AdapterLib
