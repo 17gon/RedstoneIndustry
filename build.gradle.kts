@@ -7,11 +7,19 @@ plugins {
 repositories {
     mavenCentral()
     maven("https://repo.papermc.io/repository/maven-public/")
+    maven {
+        url = uri("https://maven.pkg.github.com/17gon/AdaptersLib")
+        credentials {
+            username = findProperty("gpr.user") as String? ?: System.getenv("GITHUB_ACTOR")
+            password = findProperty("gpr.key") as String? ?: System.getenv("GITHUB_TOKEN")
+        }
+    }
 }
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:26.1.2.build.+")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+    compileOnly("com.github.17gon:adapterslib:0.1.7-SNAPSHOT")
 }
 
 kotlin {
