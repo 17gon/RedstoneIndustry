@@ -19,7 +19,11 @@ repositories {
 dependencies {
     compileOnly("io.papermc.paper:paper-api:26.1.2.build.+")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-    compileOnly("com.github.17gon:adapterslib:0.1.7-SNAPSHOT")
+
+    implementation("org.spongepowered:configurate-yaml:4.1.2")
+    implementation("org.spongepowered:configurate-extra-kotlin:4.1.2")
+
+    compileOnly("com.github.17gon:adapterslib:main-SNAPSHOT")
 }
 
 kotlin {
@@ -45,4 +49,7 @@ tasks {
             expand(props)
         }
     }
+}
+tasks.named("compileKotlin") {
+    dependsOn(gradle.includedBuild("AdaptersLib").task(":publishToMavenLocal"))
 }

@@ -2,16 +2,17 @@ package net.craftoriya.redstoneIndustry
 
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
 import net.craftoriya.adaptersLib.AdaptersLib
+import net.craftoriya.adaptersLib.AdaptersLib.Companion.configLoader
 import net.craftoriya.adaptersLib.command.CommandAdapter
-import net.craftoriya.adaptersLib.containers.InventoryTypeDomain
-import net.craftoriya.adaptersLib.containers.ItemContainer
 import net.craftoriya.adaptersLib.containers.RecipeContainer
+import net.craftoriya.adaptersLib.tools.RecipeExpander
+import net.craftoriya.adaptersLib.containers.RecipesConfig
+import net.craftoriya.adaptersLib.containers.TagsConfig
 import net.craftoriya.adaptersLib.event.HandlerPriority
 import net.craftoriya.adaptersLib.event.events.DomainCommandEvent
 import net.craftoriya.adaptersLib.event.events.DomainPlayerJumpEvent
 import net.craftoriya.adaptersLib.event.events.DomainPrepareItemCraftEvent
 import net.craftoriya.adaptersLib.listeners.PaperEventListener
-import net.craftoriya.adaptersLib.tools.match
 import org.bukkit.event.Listener
 import org.bukkit.plugin.java.JavaPlugin
 
@@ -20,10 +21,21 @@ class RedstoneIndustry: JavaPlugin() {
 
     override fun onEnable() {
         val bus = AdaptersLib.eventBus
+        val configLoader = configLoader(dataFolder)
 
         val jumpAdapter: Listener = PaperEventListener(bus)
         server.pluginManager.registerEvents(jumpAdapter, this)
 
+        val tags = configLoader.loadOrSave(TagsConfig::class, "tags")
+        val recipes = configLoader.loadOrSave(RecipesConfig::class, "recipes")
+        RecipeExpander.expand(recipes, tags).also { list ->
+            logger.info("Loaded ${list.size} recipes")
+            list.forEach { logger.info("  $it") }
+        }.forEach(registry::register)
+
+        // --------------------------------------------------------
+        // Domain underhood | Will be moved away into their classes
+        // --------------------------------------------------------
         bus.on<DomainPlayerJumpEvent>(HandlerPriority.NORMAL) { event ->
             logger.info("${event.player.name} jumped at ${event.player.position}")
 
@@ -51,36 +63,21 @@ class RedstoneIndustry: JavaPlugin() {
             }
         }
 
-        registry.register(
-            RecipeContainer.Shaped(
-                ItemContainer("", "CRAFTING_TABLE", 1, emptyMap()),
-                listOf(
-                    ItemContainer("", "FLINT", 1, emptyMap()),
-                    ItemContainer("", "FLINT", 1, emptyMap()),
-                    null,
-                    ItemContainer("", "OAK_LOG", 1, emptyMap()),
-                    ItemContainer("", "OAK_LOG", 1, emptyMap()),
-                    null,
-                    null,
-                    null,
-                    null,
-                )
-            )
-        )
-
         bus.on<DomainPrepareItemCraftEvent> { event ->
             if (event.isRepair) return@on
+            logger.info("Grid items: ${event.inventoryGrid.items.map { it?.material }}")
             val match: RecipeContainer? = registry.findMatch(event.inventoryGrid)
+            logger.info("Match: $match")
             if (match != null) {
                 event.result = match.output
                 return@on
             }
+            logger.info("Claims output: ${registry.claimsOutput(event.inventoryGrid.items[0])}")
             if (registry.claimsOutput(event.inventoryGrid.items[0])) {
                 event.result = null
                 return@on
             }
             event.result = event.inventoryGrid.items[0]
-
         }
     }
 
