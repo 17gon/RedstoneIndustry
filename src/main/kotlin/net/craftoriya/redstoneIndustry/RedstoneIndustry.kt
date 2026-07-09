@@ -10,9 +10,11 @@ import net.craftoriya.adaptersLib.containers.RecipesConfig
 import net.craftoriya.adaptersLib.containers.TagsConfig
 import net.craftoriya.adaptersLib.event.HandlerPriority
 import net.craftoriya.adaptersLib.event.events.DomainCommandEvent
+import net.craftoriya.adaptersLib.event.events.DomainPlayerJoinEvent
 import net.craftoriya.adaptersLib.event.events.DomainPlayerJumpEvent
 import net.craftoriya.adaptersLib.event.events.DomainPrepareItemCraftEvent
 import net.craftoriya.adaptersLib.listeners.PaperEventListener
+import net.craftoriya.adaptersLib.tools.RecipeBookPort
 import org.bukkit.event.Listener
 import org.bukkit.plugin.java.JavaPlugin
 
@@ -28,10 +30,16 @@ class RedstoneIndustry: JavaPlugin() {
 
         val tags = configLoader.loadOrSave(TagsConfig::class, "tags")
         val recipes = configLoader.loadOrSave(RecipesConfig::class, "recipes")
+        val recipeBook = RecipeBookPort(AdaptersLib.instance)
+
         RecipeExpander.expand(recipes, tags).also { list ->
             logger.info("Loaded ${list.size} recipes")
             list.forEach { logger.info("  $it") }
-        }.forEach(registry::register)
+        }.forEachIndexed { i, recipe ->
+            registry.register(recipe)
+            recipeBook.removeVanillaRecipesFor(recipe.output)
+            recipeBook.replaceRecipe("recipe_$i", recipe)
+        }
 
         // --------------------------------------------------------
         // Domain underhood | Will be moved away into their classes
@@ -43,6 +51,10 @@ class RedstoneIndustry: JavaPlugin() {
                 event.isCancelled = true
                 logger.info("Cancelled jump for debug player.")
             }
+        }
+
+        bus.on<DomainPlayerJoinEvent> { event ->
+            registry.allKeys().forEach { key -> recipeBook.discoverFor(event.player, key) }
         }
 
         logger.info("GamePlugin loaded.")
@@ -65,14 +77,13 @@ class RedstoneIndustry: JavaPlugin() {
 
         bus.on<DomainPrepareItemCraftEvent> { event ->
             if (event.isRepair) return@on
-            logger.info("Grid items: ${event.inventoryGrid.items.map { it?.material }}")
+
             val match: RecipeContainer? = registry.findMatch(event.inventoryGrid)
-            logger.info("Match: $match")
             if (match != null) {
                 event.result = match.output
                 return@on
             }
-            logger.info("Claims output: ${registry.claimsOutput(event.inventoryGrid.items[0])}")
+
             if (registry.claimsOutput(event.inventoryGrid.items[0])) {
                 event.result = null
                 return@on

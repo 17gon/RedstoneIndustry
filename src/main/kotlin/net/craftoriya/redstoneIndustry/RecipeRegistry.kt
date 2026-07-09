@@ -20,6 +20,10 @@ class RecipeRegistry {
         return recipes.firstOrNull { match(normalized, it) }
     }
 
+    fun allKeys(): List<String> = recipes.indices.map { "recipe_$it" }
+
+
+
     private fun gridMatrixUpscaler(grid2: List<ItemContainer?>): List<ItemContainer?> {
         val grid3 = MutableList<ItemContainer?>(9) { null }
         grid3[0] = grid2[0]; grid3[1] = grid2[1]
