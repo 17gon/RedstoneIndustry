@@ -5,11 +5,13 @@ import net.craftoriya.adaptersLib.AdaptersLib
 import net.craftoriya.adaptersLib.AdaptersLib.Companion.configLoader
 import net.craftoriya.adaptersLib.command.CommandAdapter
 import net.craftoriya.adaptersLib.containers.RecipeContainer
-import net.craftoriya.adaptersLib.tools.RecipeExpander
 import net.craftoriya.adaptersLib.containers.RecipesConfig
+import net.craftoriya.adaptersLib.tools.RecipeExpander
 import net.craftoriya.adaptersLib.containers.TagsConfig
 import net.craftoriya.adaptersLib.event.HandlerPriority
 import net.craftoriya.adaptersLib.event.events.DomainCommandEvent
+import net.craftoriya.adaptersLib.event.events.DomainFurnaceSmeltEvent
+import net.craftoriya.adaptersLib.event.events.DomainFurnaceStartSmeltEvent
 import net.craftoriya.adaptersLib.event.events.DomainPlayerJoinEvent
 import net.craftoriya.adaptersLib.event.events.DomainPlayerJumpEvent
 import net.craftoriya.adaptersLib.event.events.DomainPrepareItemCraftEvent
@@ -41,9 +43,9 @@ class RedstoneIndustry: JavaPlugin() {
             recipeBook.replaceRecipe("recipe_$i", recipe)
         }
 
-        // --------------------------------------------------------
+        // ---------------------------------------------------------
         // Domain underhood | Will be moved away into their classes
-        // --------------------------------------------------------
+        // ---------------------------------------------------------
         bus.on<DomainPlayerJumpEvent>(HandlerPriority.NORMAL) { event ->
             logger.info("${event.player.name} jumped at ${event.player.position}")
 
@@ -57,6 +59,28 @@ class RedstoneIndustry: JavaPlugin() {
             registry.allKeys().forEach { key -> recipeBook.discoverFor(event.player, key) }
         }
 
+        bus.on<DomainFurnaceSmeltEvent>(HandlerPriority.NORMAL) { event ->
+            val recipe = event.domainRecipe
+            println("matching...")
+            val match = registry.findCookingMatch(recipe.input, recipe.type) ?: return@on println("match is null")
+            if (recipe.input.count < match.input.count) {
+                event.isCancelled = true
+                println("Event is cancelled")
+            } else {
+                println("Event is not cancelled")
+                event.extraToConsume = match.input.count - 1
+            }
+        }
+
+        bus.on<DomainFurnaceStartSmeltEvent>(HandlerPriority.NORMAL) { event ->
+            val recipe = event.domainRecipe
+            println("matching...1")
+            val match = registry.findCookingMatch(recipe.input, recipe.type) ?: return@on println("match is1 null")
+            if (recipe.input.count < match.input.count) {
+                event.isCancelled = true
+                println("Event is cancelle1d")
+            }
+        }
         logger.info("GamePlugin loaded.")
         // Register commands via lifecycle manager — the new Paper way
         lifecycleManager.registerEventHandler(LifecycleEvents.COMMANDS) { event ->
@@ -78,7 +102,7 @@ class RedstoneIndustry: JavaPlugin() {
         bus.on<DomainPrepareItemCraftEvent> { event ->
             if (event.isRepair) return@on
 
-            val match: RecipeContainer? = registry.findMatch(event.inventoryGrid)
+            val match: RecipeContainer? = registry.findWorkbenchMatch(event.inventoryGrid)
             if (match != null) {
                 event.result = match.output
                 return@on

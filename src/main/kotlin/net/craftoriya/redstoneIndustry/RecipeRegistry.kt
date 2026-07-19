@@ -10,7 +10,7 @@ class RecipeRegistry {
 
     fun register(recipe: RecipeContainer) = recipes.add(recipe)
 
-    fun findMatch(grid: CraftingGridContainer): RecipeContainer? {
+    fun findWorkbenchMatch(grid: CraftingGridContainer): RecipeContainer? {
         val craftSlots = grid.items.drop(1)
         val normalized = when (grid.type) {
             InventoryTypeDomain.CRAFTING -> gridMatrixUpscaler(craftSlots)
@@ -20,9 +20,11 @@ class RecipeRegistry {
         return recipes.firstOrNull { match(normalized, it) }
     }
 
+    fun findCookingMatch(input: ItemContainer?, type: RecipeContainer.CookingType): RecipeContainer.Cooking? =
+        recipes.filterIsInstance<RecipeContainer.Cooking>()
+            .firstOrNull { it.input.material == input?.material && it.type == type }
+
     fun allKeys(): List<String> = recipes.indices.map { "recipe_$it" }
-
-
 
     private fun gridMatrixUpscaler(grid2: List<ItemContainer?>): List<ItemContainer?> {
         val grid3 = MutableList<ItemContainer?>(9) { null }
@@ -37,6 +39,7 @@ class RecipeRegistry {
     private fun match(items: List<ItemContainer?>, recipe: RecipeContainer) = when (recipe) {
         is RecipeContainer.Shaped -> matchShaped(items, recipe.pattern)
         is RecipeContainer.Shapeless -> matchShapeless(items, recipe.ingredients)
+        else -> false //This mean it got feed with wrong recipe inside container inside workbench, what should be impossible
     }
 
     private fun matchShaped(grid: List<ItemContainer?>, pattern: List<ItemContainer?>): Boolean {
@@ -45,7 +48,6 @@ class RecipeRegistry {
             expected == null && item == null || expected?.material == item?.material
         }
     }
-
     private fun matchShapeless(grid: List<ItemContainer?>, ingredients: List<ItemContainer>): Boolean {
         val actual = grid.filterNotNull().map { it.material }.sorted()
         val expected = ingredients.map { it.material }.sorted()
