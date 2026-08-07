@@ -15,8 +15,14 @@ import net.craftoriya.adaptersLib.event.events.DomainFurnaceStartSmeltEvent
 import net.craftoriya.adaptersLib.event.events.DomainPlayerJoinEvent
 import net.craftoriya.adaptersLib.event.events.DomainPlayerJumpEvent
 import net.craftoriya.adaptersLib.event.events.DomainPrepareItemCraftEvent
+import net.craftoriya.adaptersLib.event.events.DomainVillagerInteractEvent
 import net.craftoriya.adaptersLib.listeners.PaperEventListener
+import net.craftoriya.adaptersLib.tools.ITradeBookPort
 import net.craftoriya.adaptersLib.tools.RecipeBookPort
+import net.craftoriya.adaptersLib.tools.TradeApplyMode
+import net.craftoriya.adaptersLib.tools.TradeBookPort
+import org.bukkit.Bukkit
+import org.bukkit.entity.Villager
 import org.bukkit.event.Listener
 import org.bukkit.plugin.java.JavaPlugin
 
@@ -61,24 +67,19 @@ class RedstoneIndustry: JavaPlugin() {
 
         bus.on<DomainFurnaceSmeltEvent>(HandlerPriority.NORMAL) { event ->
             val recipe = event.domainRecipe
-            println("matching...")
-            val match = registry.findCookingMatch(recipe.input, recipe.type) ?: return@on println("match is null")
+            val match = registry.findCookingMatch(recipe.input, recipe.type) ?: return@on
             if (recipe.input.count < match.input.count) {
                 event.isCancelled = true
-                println("Event is cancelled")
             } else {
-                println("Event is not cancelled")
                 event.extraToConsume = match.input.count - 1
             }
         }
 
         bus.on<DomainFurnaceStartSmeltEvent>(HandlerPriority.NORMAL) { event ->
             val recipe = event.domainRecipe
-            println("matching...1")
-            val match = registry.findCookingMatch(recipe.input, recipe.type) ?: return@on println("match is1 null")
+            val match = registry.findCookingMatch(recipe.input, recipe.type) ?: return@on
             if (recipe.input.count < match.input.count) {
                 event.isCancelled = true
-                println("Event is cancelle1d")
             }
         }
         logger.info("GamePlugin loaded.")
@@ -113,6 +114,18 @@ class RedstoneIndustry: JavaPlugin() {
                 return@on
             }
             event.result = event.inventoryGrid.items[0]
+        }
+
+        val tradeRegistry = TradeRegistry(recipes)
+
+        val tradeBook: ITradeBookPort = TradeBookPort()
+
+        var mode = TradeApplyMode.ADD
+        bus.on<DomainVillagerInteractEvent> { event ->
+            val matches = tradeRegistry.get(event.profession, event.level)
+            if (matches.isEmpty()) return@on
+            tradeBook.applyTrades(event.entity, matches, mode)
+            mode = matches[0].mode
         }
     }
 
