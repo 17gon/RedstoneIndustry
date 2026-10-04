@@ -1,9 +1,9 @@
-package net.craftoriya.redstoneIndustry
+package net.craftoriya.redstoneIndustry.recipe
 
-import net.craftoriya.adaptersLib.containers.CraftingGridContainer
-import net.craftoriya.adaptersLib.containers.InventoryTypeDomain
-import net.craftoriya.adaptersLib.containers.ItemContainer
-import net.craftoriya.adaptersLib.containers.RecipeContainer
+import net.craftoriya.adaptersLib.model.CraftingGridContainer
+import net.craftoriya.adaptersLib.model.InventoryTypeDomain
+import net.craftoriya.adaptersLib.model.ItemContainer
+import net.craftoriya.adaptersLib.model.RecipeContainer
 
 class RecipeRegistry {
     private val recipes = mutableListOf<RecipeContainer>()
@@ -39,7 +39,7 @@ class RecipeRegistry {
     private fun match(items: List<ItemContainer?>, recipe: RecipeContainer) = when (recipe) {
         is RecipeContainer.Shaped -> matchShaped(items, recipe.pattern)
         is RecipeContainer.Shapeless -> matchShapeless(items, recipe.ingredients)
-        else -> false //This mean it got feed with wrong recipe inside container inside workbench, what should be impossible
+        else -> false
     }
 
     private fun matchShaped(grid: List<ItemContainer?>, pattern: List<ItemContainer?>): Boolean {

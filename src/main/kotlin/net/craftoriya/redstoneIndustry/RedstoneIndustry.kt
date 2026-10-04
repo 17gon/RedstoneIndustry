@@ -2,142 +2,100 @@ package net.craftoriya.redstoneIndustry
 
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
 import net.craftoriya.adaptersLib.AdaptersLib
-import net.craftoriya.adaptersLib.AdaptersLib.Companion.configLoader
-import net.craftoriya.adaptersLib.command.CommandAdapter
-import net.craftoriya.adaptersLib.containers.RecipeContainer
-import net.craftoriya.adaptersLib.containers.RecipesConfig
-import net.craftoriya.adaptersLib.tools.RecipeExpander
-import net.craftoriya.adaptersLib.containers.TagsConfig
-import net.craftoriya.adaptersLib.event.HandlerPriority
-import net.craftoriya.adaptersLib.event.events.DomainCommandEvent
-import net.craftoriya.adaptersLib.event.events.DomainFurnaceSmeltEvent
-import net.craftoriya.adaptersLib.event.events.DomainFurnaceStartSmeltEvent
-import net.craftoriya.adaptersLib.event.events.DomainPlayerJoinEvent
-import net.craftoriya.adaptersLib.event.events.DomainPlayerJumpEvent
-import net.craftoriya.adaptersLib.event.events.DomainPrepareItemCraftEvent
-import net.craftoriya.adaptersLib.event.events.DomainVillagerInteractEvent
-import net.craftoriya.adaptersLib.listeners.PaperEventListener
-import net.craftoriya.adaptersLib.tools.ITradeBookPort
-import net.craftoriya.adaptersLib.tools.RecipeBookPort
-import net.craftoriya.adaptersLib.tools.TradeApplyMode
-import net.craftoriya.adaptersLib.tools.TradeBookPort
-import org.bukkit.Bukkit
-import org.bukkit.entity.Villager
-import org.bukkit.event.Listener
+import net.craftoriya.adaptersLib.adapter.BukkitBlockDataAdapter
+import net.craftoriya.adaptersLib.adapter.BukkitContainerAdapter
+import net.craftoriya.adaptersLib.adapter.BukkitOutlineAdapter
+import net.craftoriya.adaptersLib.adapter.BukkitPlayerFeedbackAdapter
+import net.craftoriya.adaptersLib.adapter.BukkitRecipeBookAdapter
+import net.craftoriya.adaptersLib.adapter.BukkitSchedulerAdapter
+import net.craftoriya.adaptersLib.adapter.BukkitTradeBookAdapter
+import net.craftoriya.adaptersLib.adapter.BukkitWorldQueryAdapter
+import net.craftoriya.adaptersLib.adapter.ai.BukkitVillagerControlAdapter
+import net.craftoriya.adaptersLib.adapter.command.CommandAdapter
+import net.craftoriya.adaptersLib.adapter.listener.BlockSyncListener
+import net.craftoriya.adaptersLib.adapter.listener.PaperEventListener
+import net.craftoriya.adaptersLib.adapter.listener.VillagerTickSource
+import net.craftoriya.adaptersLib.config.RecipesConfig
+import net.craftoriya.adaptersLib.config.TagsConfig
+import net.craftoriya.adaptersLib.event.DomainEventBus
+import net.craftoriya.adaptersLib.event.domainevents.DomainCommandEvent
+import net.craftoriya.adaptersLib.event.domainevents.DomainPlayerJumpEvent
+import net.craftoriya.adaptersLib.port.IVillagerControlPort
+import net.craftoriya.adaptersLib.recipe.RecipeExpander
+import net.craftoriya.redstoneIndustry.command.DebugCommand
+import net.craftoriya.redstoneIndustry.recipe.RecipeHandlers
+import net.craftoriya.redstoneIndustry.recipe.RecipeRegistry
+import net.craftoriya.redstoneIndustry.recipe.TradeHandlers
+import net.craftoriya.redstoneIndustry.recipe.TradeRegistry
+import net.craftoriya.redstoneIndustry.villagers.VillagerConfig
+import net.craftoriya.redstoneIndustry.villagers.VillagerSystem
+import net.craftoriya.redstoneIndustry.villagers.work.TradeWorkRecipes
 import org.bukkit.plugin.java.JavaPlugin
 
-class RedstoneIndustry: JavaPlugin() {
-    val registry = RecipeRegistry()
+class RedstoneIndustry : JavaPlugin() {
 
     override fun onEnable() {
         val bus = AdaptersLib.eventBus
-        val configLoader = configLoader(dataFolder)
+        val configs = AdaptersLib.configLoader(dataFolder)
 
-        val jumpAdapter: Listener = PaperEventListener(bus)
-        server.pluginManager.registerEvents(jumpAdapter, this)
+        server.pluginManager.registerEvents(PaperEventListener(bus), this)
+        server.pluginManager.registerEvents(BlockSyncListener(bus), this)
 
-        val tags = configLoader.loadOrSave(TagsConfig::class, "tags")
-        val recipes = configLoader.loadOrSave(RecipesConfig::class, "recipes")
-        val recipeBook = RecipeBookPort(AdaptersLib.instance)
+        val tags = configs.loadOrSave(TagsConfig::class, "tags")
+        val recipes = configs.loadOrSave(RecipesConfig::class, "recipes")
+        val villagerConfig = configs.loadOrSave(VillagerConfig::class, "villagers")
 
-        RecipeExpander.expand(recipes, tags).also { list ->
-            logger.info("Loaded ${list.size} recipes")
-            list.forEach { logger.info("  $it") }
-        }.forEachIndexed { i, recipe ->
-            registry.register(recipe)
-            recipeBook.removeVanillaRecipesFor(recipe.output)
-            recipeBook.replaceRecipe("recipe_$i", recipe)
-        }
-
-        // ---------------------------------------------------------
-        // Domain underhood | Will be moved away into their classes
-        // ---------------------------------------------------------
-        bus.on<DomainPlayerJumpEvent>(HandlerPriority.NORMAL) { event ->
-            logger.info("${event.player.name} jumped at ${event.player.position}")
-
-            if (event.player.name == "debug") {
-                event.isCancelled = true
-                logger.info("Cancelled jump for debug player.")
-            }
-        }
-
-        bus.on<DomainPlayerJoinEvent> { event ->
-            registry.allKeys().forEach { key -> recipeBook.discoverFor(event.player, key) }
-        }
-
-        bus.on<DomainFurnaceSmeltEvent>(HandlerPriority.NORMAL) { event ->
-            val recipe = event.domainRecipe
-            val match = registry.findCookingMatch(recipe.input, recipe.type) ?: return@on
-            if (recipe.input.count < match.input.count) {
-                event.isCancelled = true
-            } else {
-                event.extraToConsume = match.input.count - 1
-            }
-        }
-
-        bus.on<DomainFurnaceStartSmeltEvent>(HandlerPriority.NORMAL) { event ->
-            val recipe = event.domainRecipe
-            val match = registry.findCookingMatch(recipe.input, recipe.type) ?: return@on
-            if (recipe.input.count < match.input.count) {
-                event.isCancelled = true
-            }
-        }
-        logger.info("GamePlugin loaded.")
-        // Register commands via lifecycle manager — the new Paper way
-        lifecycleManager.registerEventHandler(LifecycleEvents.COMMANDS) { event ->
-            val commands = event.registrar()
-
-            // Each command gets its own adapter instance so label is implicit
-            commands.register("debug",        "Debug command", CommandAdapter(bus, "debug"))
-            commands.register("researchmenu", "Open research menu",  CommandAdapter(bus, "researchmenu"))
-        }
-
-        // Core listens for domain command events — unchanged
-        bus.on<DomainCommandEvent> { event ->
-            when (event.label) {
-                "debug"        -> handleDebug(event)
-                "researchmenu" -> handleResearchMenu(event)
-            }
-        }
-
-        bus.on<DomainPrepareItemCraftEvent> { event ->
-            if (event.isRepair) return@on
-
-            val match: RecipeContainer? = registry.findWorkbenchMatch(event.inventoryGrid)
-            if (match != null) {
-                event.result = match.output
-                return@on
-            }
-
-            if (registry.claimsOutput(event.inventoryGrid.items[0])) {
-                event.result = null
-                return@on
-            }
-            event.result = event.inventoryGrid.items[0]
-        }
+        val recipeHandlers = RecipeHandlers(bus, RecipeRegistry(), BukkitRecipeBookAdapter(AdaptersLib.instance))
+        val expanded = RecipeExpander.expand(recipes, tags)
+        logger.info("Loaded ${expanded.size} recipes")
+        recipeHandlers.load(expanded)
+        recipeHandlers.start()
 
         val tradeRegistry = TradeRegistry(recipes)
+        TradeHandlers(bus, tradeRegistry, BukkitTradeBookAdapter()).start()
 
-        val tradeBook: ITradeBookPort = TradeBookPort()
+        val villagerControl = BukkitVillagerControlAdapter()
+        val tickSource = VillagerTickSource(this, bus)
+        val villagers = VillagerSystem(
+            bus,
+            villagerConfig,
+            BukkitBlockDataAdapter(this),
+            BukkitWorldQueryAdapter(),
+            BukkitContainerAdapter(),
+            villagerControl,
+            BukkitOutlineAdapter(this),
+            BukkitPlayerFeedbackAdapter(),
+            BukkitSchedulerAdapter(this),
+            tickSource,
+            TradeWorkRecipes(tradeRegistry)
+        )
+        villagers.start()
+        tickSource.start()
 
-        var mode = TradeApplyMode.ADD
-        bus.on<DomainVillagerInteractEvent> { event ->
-            val matches = tradeRegistry.get(event.profession, event.level)
-            if (matches.isEmpty()) return@on
-            tradeBook.applyTrades(event.entity, matches, mode)
-            mode = matches[0].mode
+        registerJumpDemo(bus, villagerControl)
+        registerCommands(bus, DebugCommand(villagers) { logger.info(it) })
+    }
+
+    private fun registerCommands(bus: DomainEventBus, debug: DebugCommand) {
+        lifecycleManager.registerEventHandler(LifecycleEvents.COMMANDS) { event ->
+            val commands = event.registrar()
+            commands.register("debug", "Debug command", CommandAdapter(bus, "debug"))
+            commands.register("researchmenu", "Open research menu", CommandAdapter(bus, "researchmenu"))
+        }
+
+        bus.on<DomainCommandEvent> { event ->
+            when (event.label) {
+                "debug" -> debug.handle(event)
+                "researchmenu" -> event.response.send(event.sender, "Opening research menu...")
+            }
         }
     }
 
-    private fun handleDebug(event: DomainCommandEvent) {
-        if (!event.sender.isPlayer) {
-            event.response.sendError(event.sender, "Only players can use this.")
-            return
+    private fun registerJumpDemo(bus: DomainEventBus, villagers: IVillagerControlPort) {
+        bus.on<DomainPlayerJumpEvent> { event ->
+            villagers.getNearbyEntities(event.player.position, 5.0, "world")
+                .filter { it.type == "VILLAGER" }
+                .forEach { villagers.lookAt(it.id, event.player.position) }
         }
-        event.response.send(event.sender, "Debug command works. Args: ${event.args}")
-    }
-
-    private fun handleResearchMenu(event: DomainCommandEvent) {
-        event.response.send(event.sender, "Opening research menu...")
     }
 }

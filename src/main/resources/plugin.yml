@@ -2,7 +2,7 @@ name: RedstoneIndustry
 version: '${version}'
 
 main: net.craftoriya.redstoneIndustry.RedstoneIndustry
-api-version: '26.1.2'
+api-version: '26.2'
 
 dependencies:
   server:

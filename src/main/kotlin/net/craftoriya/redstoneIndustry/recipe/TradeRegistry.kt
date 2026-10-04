@@ -1,8 +1,8 @@
-package net.craftoriya.redstoneIndustry
+package net.craftoriya.redstoneIndustry.recipe
 
-import net.craftoriya.adaptersLib.containers.RecipeContainer
-import net.craftoriya.adaptersLib.containers.RecipesConfig
-import net.craftoriya.adaptersLib.tools.RecipeExpander
+import net.craftoriya.adaptersLib.model.RecipeContainer
+import net.craftoriya.adaptersLib.config.RecipesConfig
+import net.craftoriya.adaptersLib.recipe.RecipeExpander
 
 class TradeRegistry(recipes: RecipesConfig) {
     private val masterTrades: MutableMap<RecipeContainer.TradeProfession, MutableMap<Int, MutableList<RecipeContainer.Trades>>> =
@@ -10,6 +10,14 @@ class TradeRegistry(recipes: RecipesConfig) {
 
     fun get(profession: RecipeContainer.TradeProfession, level: Int): List<RecipeContainer.Trades> =
         masterTrades[profession]?.get(level) ?: emptyList()
+
+    fun upTo(profession: RecipeContainer.TradeProfession, level: Int): List<RecipeContainer.Trades> =
+        masterTrades[profession]
+            ?.filterKeys { it <= level }
+            ?.toSortedMap()
+            ?.values
+            ?.flatten()
+            ?: emptyList()
 
     fun put(profession: RecipeContainer.TradeProfession, level: Int, trade: RecipeContainer.Trades) {
         masterTrades.getOrPut(profession) { mutableMapOf() }
