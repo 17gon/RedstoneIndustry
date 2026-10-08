@@ -1,8 +1,8 @@
 package net.craftoriya.redstoneIndustry.villagers
 
 import net.craftoriya.adaptersLib.event.DomainEventBus
-import net.craftoriya.adaptersLib.event.domainevents.BlockChange
 import net.craftoriya.adaptersLib.event.domainevents.DomainBlockChangeEvent
+import net.craftoriya.adaptersLib.model.BlockChange
 import net.craftoriya.adaptersLib.model.LocationIContainer
 import net.craftoriya.adaptersLib.port.IWorldQueryPort
 import net.craftoriya.adaptersLib.model.Vec3I

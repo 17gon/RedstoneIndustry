@@ -1,4 +1,4 @@
-package net.craftoriya.redstoneIndustry
+package net.craftoriya.redstoneIndustry.tech
 
 import org.spongepowered.configurate.objectmapping.ConfigSerializable
 

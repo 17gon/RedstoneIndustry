@@ -2,8 +2,8 @@ package net.craftoriya.redstoneIndustry.tools
 
 import net.craftoriya.adaptersLib.event.DomainEventBus
 import net.craftoriya.adaptersLib.event.domainevents.DomainPlayerInteractEvent
-import net.craftoriya.adaptersLib.event.domainevents.InteractAction
 import net.craftoriya.adaptersLib.model.BlockContainer
+import net.craftoriya.adaptersLib.model.InteractAction
 import net.craftoriya.adaptersLib.model.LocationIContainer
 import net.craftoriya.adaptersLib.port.IPlayerFeedbackPort
 import net.craftoriya.redstoneIndustry.villagers.*
@@ -32,20 +32,19 @@ class StickToolService(
     private fun onUse(event: DomainPlayerInteractEvent) {
         if (!event.mainHand || event.item?.material != TOOL) return
         val id = event.player.id
-        val block = event.block
-        val kind = block?.let { kinds.of(it) }
 
-        if (block == null || kind == null) return
-        if (event.sneaking) {
-            if (event.action == InteractAction.RIGHT_AIR) {
-                cycle(id)
-                return
-            }
-            if (event.action == InteractAction.RIGHT_BLOCK && kind == BlockKind.WORKSTATION) {
-                feedback.actionBar(id, debug.showStation(id, block.location))
-                event.isCancelled = true
-                return
-            }
+        if (event.sneaking && event.action == InteractAction.RIGHT_AIR) {
+            cycle(id)
+            return
+        }
+
+        val block = event.block ?: return
+        val kind = kinds.of(block) ?: return
+
+        if (event.sneaking && event.action == InteractAction.RIGHT_BLOCK && kind == BlockKind.WORKSTATION) {
+            feedback.actionBar(id, debug.showStation(id, block.location))
+            event.isCancelled = true
+            return
         }
 
         when (modes[id] ?: ToolMode.DEFAULT) {
@@ -59,6 +58,7 @@ class StickToolService(
         val next = ToolMode.entries[((modes[id] ?: ToolMode.DEFAULT).ordinal + 1) % ToolMode.entries.size]
         modes[id] = next
         pending.remove(id)
+        feedback.glowHeldItem(id, next != ToolMode.DEFAULT)
         feedback.actionBar(id, "Tool: ${next.name.lowercase()}")
     }
 
