@@ -17,7 +17,8 @@ class VillagerWorkRoutine(
     private val containers: IContainerPort,
     private val links: StationLinkCache,
     private val recipes: WorkRecipeProvider,
-    private val animation: WorkAnimation
+    private val animation: WorkAnimation,
+    private val exclusive: (LocationIContainer) -> Boolean = { false }
 ) {
     private class Job(val recipe: WorkRecipe, val site: LocationIContainer, val doneTick: Long)
 
@@ -32,6 +33,7 @@ class VillagerWorkRoutine(
             if (e.tick >= job.doneTick) finish(id, job, e.tick)
             return
         }
+        if (e.jobSite?.let(exclusive) == true) return
         if (canWork(e)) start(e, id)
     }
 

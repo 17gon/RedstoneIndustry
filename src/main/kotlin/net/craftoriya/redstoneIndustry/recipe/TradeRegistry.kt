@@ -1,7 +1,7 @@
 package net.craftoriya.redstoneIndustry.recipe
 
 import net.craftoriya.adaptersLib.model.RecipeContainer
-import net.craftoriya.adaptersLib.config.RecipesConfig
+import net.craftoriya.adaptersLib.recipe.RecipesConfig
 import net.craftoriya.adaptersLib.recipe.RecipeExpander
 
 class TradeRegistry(recipes: RecipesConfig) {

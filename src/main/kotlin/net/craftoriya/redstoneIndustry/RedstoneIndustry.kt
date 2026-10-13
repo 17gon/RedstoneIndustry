@@ -2,8 +2,10 @@ package net.craftoriya.redstoneIndustry
 
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents
 import net.craftoriya.adaptersLib.AdaptersLib
+import net.craftoriya.adaptersLib.adapter.BukkitBlockBreakAdapter
 import net.craftoriya.adaptersLib.adapter.BukkitBlockDataAdapter
 import net.craftoriya.adaptersLib.adapter.BukkitContainerAdapter
+import net.craftoriya.adaptersLib.adapter.BukkitEntityAdapter
 import net.craftoriya.adaptersLib.adapter.BukkitMenuAdapter
 import net.craftoriya.adaptersLib.adapter.BukkitOutlineAdapter
 import net.craftoriya.adaptersLib.adapter.BukkitPlayerFeedbackAdapter
@@ -17,24 +19,28 @@ import net.craftoriya.adaptersLib.adapter.listener.BlockSyncListener
 import net.craftoriya.adaptersLib.adapter.listener.MenuListener
 import net.craftoriya.adaptersLib.adapter.listener.PaperEventListener
 import net.craftoriya.adaptersLib.adapter.listener.VillagerTickSource
-import net.craftoriya.adaptersLib.config.RecipesConfig
+import net.craftoriya.adaptersLib.recipe.RecipesConfig
 import net.craftoriya.adaptersLib.config.TagsConfig
 import net.craftoriya.adaptersLib.event.DomainEventBus
 import net.craftoriya.adaptersLib.event.domainevents.DomainCommandEvent
 import net.craftoriya.adaptersLib.event.domainevents.DomainPlayerJumpEvent
 import net.craftoriya.adaptersLib.port.IVillagerControlPort
 import net.craftoriya.adaptersLib.recipe.RecipeExpander
+import net.craftoriya.redstoneIndustry.command.CommandSpecs
 import net.craftoriya.redstoneIndustry.command.DebugCommand
 import net.craftoriya.redstoneIndustry.command.ResearchCommand
 import net.craftoriya.redstoneIndustry.menu.MenuService
 import net.craftoriya.redstoneIndustry.menu.MenusConfig
 import net.craftoriya.redstoneIndustry.menu.ResearchMenu
+import net.craftoriya.redstoneIndustry.outline.OutlineStyles
+import net.craftoriya.redstoneIndustry.outline.OutlinesConfig
 import net.craftoriya.redstoneIndustry.recipe.RecipeHandlers
 import net.craftoriya.redstoneIndustry.recipe.RecipeRegistry
 import net.craftoriya.redstoneIndustry.recipe.TradeHandlers
 import net.craftoriya.redstoneIndustry.recipe.TradeRegistry
 import net.craftoriya.redstoneIndustry.tech.TechExpander
 import net.craftoriya.redstoneIndustry.tech.TechStates
+import net.craftoriya.redstoneIndustry.tech.TechTree
 import net.craftoriya.redstoneIndustry.tech.TechTreeDto
 import net.craftoriya.redstoneIndustry.villagers.VillagerConfig
 import net.craftoriya.redstoneIndustry.villagers.VillagerSystem
@@ -54,6 +60,7 @@ class RedstoneIndustry : JavaPlugin() {
         val tags = configs.loadOrSave(TagsConfig::class, "tags")
         val recipes = configs.loadOrSave(RecipesConfig::class, "recipes")
         val villagerConfig = configs.loadOrSave(VillagerConfig::class, "villagers")
+        val outlineStyles = OutlineStyles(configs.loadOrSave(OutlinesConfig::class, "outlines", OutlineStyles.DEFAULT_CONFIG))
 
         val recipeHandlers = RecipeHandlers(bus, RecipeRegistry(), BukkitRecipeBookAdapter(AdaptersLib.instance))
         val expanded = RecipeExpander.expand(recipes, tags)
@@ -74,9 +81,12 @@ class RedstoneIndustry : JavaPlugin() {
             BukkitContainerAdapter(),
             villagerControl,
             BukkitOutlineAdapter(this),
+            outlineStyles,
             BukkitPlayerFeedbackAdapter(),
             BukkitSchedulerAdapter(this),
             tickSource,
+            BukkitEntityAdapter(),
+            BukkitBlockBreakAdapter(bus),
             TradeWorkRecipes(tradeRegistry)
         )
         villagers.start()
@@ -92,15 +102,16 @@ class RedstoneIndustry : JavaPlugin() {
 
         registerJumpDemo(bus, villagerControl)
         registerCommands(bus, DebugCommand(villagers) { logger.info(it) },
-            ResearchCommand(techTree, techStates, researchMenu)
+            ResearchCommand(techTree, techStates, researchMenu),
+            techTree
         )
     }
 
-    private fun registerCommands(bus: DomainEventBus, debug: DebugCommand, research: ResearchCommand) {
+    private fun registerCommands(bus: DomainEventBus, debug: DebugCommand, research: ResearchCommand, techTree: TechTree) {
         lifecycleManager.registerEventHandler(LifecycleEvents.COMMANDS) { event ->
             val commands = event.registrar()
-            commands.register("debug", "Debug command", CommandAdapter(bus, "debug"))
-            commands.register("researchmenu", "Open research menu", CommandAdapter(bus, "researchmenu"))
+            commands.register("debug", "Debug command", CommandAdapter(bus, "debug", CommandSpecs.debug()))
+            commands.register("researchmenu", "Open research menu", CommandAdapter(bus, "researchmenu", CommandSpecs.research { techTree.byId.keys }))
         }
 
         bus.on<DomainCommandEvent> { event ->

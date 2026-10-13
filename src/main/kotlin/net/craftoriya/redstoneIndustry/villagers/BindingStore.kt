@@ -34,6 +34,12 @@ class BindingStore(private val data: IBlockDataPort) {
 
     fun removeContainer(at: LocationIContainer) = data.remove(at, CONTAINER)
 
+    fun demolish(at: LocationIContainer): Boolean = data.get(at, DEMOLISH) == "1"
+
+    fun setDemolish(at: LocationIContainer, on: Boolean) {
+        if (on) data.set(at, DEMOLISH, "1") else data.remove(at, DEMOLISH)
+    }
+
     private fun enc(v: Vec3I?) = if (v == null) "-" else "${v.x},${v.y},${v.z}"
 
     private fun dec(s: String): Vec3I? {
@@ -45,5 +51,6 @@ class BindingStore(private val data: IBlockDataPort) {
     private companion object {
         const val STATION = "s"
         const val CONTAINER = "c"
+        const val DEMOLISH = "d"
     }
 }

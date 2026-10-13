@@ -2,6 +2,12 @@ package net.craftoriya.redstoneIndustry.menu
 
 import net.craftoriya.adaptersLib.model.ItemContainer
 import net.craftoriya.adaptersLib.model.MenuContainer
+import net.craftoriya.redstoneIndustry.menu.ResearchPalette.COST
+import net.craftoriya.redstoneIndustry.menu.ResearchPalette.FRAME
+import net.craftoriya.redstoneIndustry.menu.ResearchPalette.LEADS_TO
+import net.craftoriya.redstoneIndustry.menu.ResearchPalette.LOCKED
+import net.craftoriya.redstoneIndustry.menu.ResearchPalette.NODE
+import net.craftoriya.redstoneIndustry.menu.ResearchPalette.REQUIRES
 import net.craftoriya.redstoneIndustry.tech.TechNode
 import net.craftoriya.redstoneIndustry.tech.TechStates
 import net.craftoriya.redstoneIndustry.tech.TechTree
@@ -47,21 +53,36 @@ class ResearchMenu(
         if (page > 0) items[45] = button("Previous", "ARROW", "cat:$category,${page - 1}")
         items[49] = button("Back", "BARRIER", "root")
         if (from + PAGE < nodes.size) items[53] = button("Next", "ARROW", "cat:$category,${page + 1}")
+        fill(items, 0..53, FRAME)
         menus.open(player, MENU, MenuContainer("Research: $category", 6, items))
     }
 
     fun openNode(player: UUID, id: String) {
         val node = tree.byId[id] ?: return
+        val dependents = tree.dependents[id].orEmpty()
         val items = HashMap<Int, ItemContainer>()
+
         node.prerequisites.take(9).forEachIndexed { i, p ->
             items[i] = nodeItem(player, tree.byId.getValue(p), false).action("node:$p")
         }
+        fill(items, 0..8, REQUIRES, if (node.prerequisites.isEmpty()) "Requires: nothing" else "Requires")
+
         items[13] = nodeItem(player, node, true)
+        fill(items, 9..17, NODE, "Research")
+
         node.cost.take(9).forEachIndexed { i, cost -> items[18 + i] = cost }
-        tree.dependents[id].orEmpty().take(9).forEachIndexed { i, d ->
+        fill(items, 18..26, COST, if (node.cost.isEmpty()) "Cost: free" else "Cost")
+
+        fill(items, 27..35, FRAME)
+
+        dependents.take(9).forEachIndexed { i, d ->
             items[36 + i] = nodeItem(player, tree.byId.getValue(d), false).action("node:$d")
         }
+        fill(items, 36..44, LEADS_TO, if (dependents.isEmpty()) "Leads to: nothing" else "Leads to")
+
         items[49] = button("Back", "BARRIER", "cat:${node.category},0")
+        fill(items, 45..53, FRAME)
+
         menus.open(player, MENU, MenuContainer("Research: ${node.id}", 6, items))
     }
 
@@ -83,8 +104,17 @@ class ResearchMenu(
 
         val props = mutableMapOf("lore" to lore.joinToString("\n"), "hide" to "true")
         if (researched) props["glint"] = "true"
-        val material = if (researched || missing.isEmpty()) node.icon else "GRAY_STAINED_GLASS_PANE"
-        return ItemContainer(node.id, material, 1, props)
+
+        return when {
+            researched -> ItemContainer(ResearchPalette.DONE + node.id, node.icon, 1, props)
+            missing.isEmpty() -> ItemContainer(ResearchPalette.AVAILABLE + node.id, node.icon, 1, props)
+            else -> ItemContainer(LOCKED.text + node.id, LOCKED.pane, 1, props)
+        }
+    }
+
+    private fun fill(items: MutableMap<Int, ItemContainer>, slots: IntRange, section: Section, label: String = "") {
+        val name = if (label.isEmpty()) " " else section.text + label
+        for (slot in slots) items.putIfAbsent(slot, ItemContainer(name, section.pane, 1))
     }
 
     private fun button(name: String, material: String, action: String) =

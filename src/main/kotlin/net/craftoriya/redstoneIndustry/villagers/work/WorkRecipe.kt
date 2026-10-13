@@ -2,7 +2,7 @@ package net.craftoriya.redstoneIndustry.villagers.work
 
 import net.craftoriya.adaptersLib.model.ItemContainer
 import net.craftoriya.adaptersLib.model.RecipeContainer
-import net.craftoriya.adaptersLib.port.TradeApplyMode
+import net.craftoriya.adaptersLib.model.TradeApplyMode
 import net.craftoriya.redstoneIndustry.recipe.TradeRegistry
 
 data class WorkRecipe(val inputs: List<ItemContainer>, val output: ItemContainer, val tier: Int)

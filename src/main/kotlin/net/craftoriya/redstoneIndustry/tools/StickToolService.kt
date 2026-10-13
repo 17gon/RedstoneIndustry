@@ -5,7 +5,11 @@ import net.craftoriya.adaptersLib.event.domainevents.DomainPlayerInteractEvent
 import net.craftoriya.adaptersLib.model.BlockContainer
 import net.craftoriya.adaptersLib.model.InteractAction
 import net.craftoriya.adaptersLib.model.LocationIContainer
+import net.craftoriya.adaptersLib.model.Vec3I
 import net.craftoriya.adaptersLib.port.IPlayerFeedbackPort
+import net.craftoriya.redstoneIndustry.demolish.AreaKind
+import net.craftoriya.redstoneIndustry.demolish.AreaStore
+import net.craftoriya.redstoneIndustry.demolish.AreaView
 import net.craftoriya.redstoneIndustry.villagers.*
 import net.craftoriya.redstoneIndustry.villagers.binding.BlockKind
 import net.craftoriya.redstoneIndustry.villagers.binding.BlockKinds
@@ -20,12 +24,16 @@ class StickToolService(
     private val debug: DebugViewService,
     private val links: StationLinkCache,
     private val kinds: BlockKinds,
-    private val finder: ContainerFinder
+    private val finder: ContainerFinder,
+    private val areas: AreaStore,
+    private val areaView: AreaView
 ) {
-    enum class ToolMode { DEFAULT, BINDER, SCREWDRIVER }
+    enum class ToolMode { DEFAULT, BINDER, SCREWDRIVER, DEMOLISH_AREA, SAFE_AREA }
 
     private val modes = HashMap<UUID, ToolMode>()
     private val pending = HashMap<UUID, LocationIContainer>()
+    private val areaStation = HashMap<UUID, LocationIContainer>()
+    private val corner = HashMap<UUID, Vec3I>()
 
     fun subscribe(bus: DomainEventBus) = bus.on<DomainPlayerInteractEvent> { onUse(it) }
 
@@ -51,6 +59,8 @@ class StickToolService(
             ToolMode.DEFAULT -> {}
             ToolMode.BINDER -> binder(event, block, kind)
             ToolMode.SCREWDRIVER -> screwdriver(event, block, kind)
+            ToolMode.DEMOLISH_AREA -> area(event, block, kind, AreaKind.DEMOLISH)
+            ToolMode.SAFE_AREA -> area(event, block, kind, AreaKind.SAFE)
         }
     }
 
@@ -58,8 +68,51 @@ class StickToolService(
         val next = ToolMode.entries[((modes[id] ?: ToolMode.DEFAULT).ordinal + 1) % ToolMode.entries.size]
         modes[id] = next
         pending.remove(id)
+        areaStation.remove(id)
+        corner.remove(id)
         feedback.glowHeldItem(id, next != ToolMode.DEFAULT)
         feedback.actionBar(id, "Tool: ${next.name.lowercase()}")
+    }
+
+    private fun area(e: DomainPlayerInteractEvent, b: BlockContainer, kind: BlockKind, areaKind: AreaKind) {
+        val id = e.player.id
+        if (e.action == InteractAction.LEFT_BLOCK) {
+            if (kind == BlockKind.WORKSTATION && e.sneaking) {
+                areas.clear(b.location, areaKind)
+                areaView.show(id, b.location)
+                feedback.actionBar(id, "Cleared ${areaKind.name.lowercase()}")
+                e.isCancelled = true
+            } else if (corner.remove(id) != null) {
+                feedback.actionBar(id, "Corner cleared")
+                e.isCancelled = true
+            }
+            return
+        }
+        if (e.action != InteractAction.RIGHT_BLOCK) return
+        e.isCancelled = true
+
+        if (kind == BlockKind.WORKSTATION) {
+            areaStation[id] = b.location
+            corner.remove(id)
+            areaView.show(id, b.location)
+            feedback.actionBar(id, "Workstation selected")
+            return
+        }
+        val station = areaStation[id] ?: run { feedback.actionBar(id, "Select workstation first"); return }
+        val pos = b.location.vec3I
+        val first = corner.remove(id)
+        if (first == null) {
+            corner[id] = pos
+            feedback.actionBar(id, "Corner 1: ${pos.x} ${pos.y} ${pos.z}")
+            return
+        }
+        runCatching { areas.set(station, areaKind, first, pos) }
+            .onSuccess {
+                if (areaKind == AreaKind.DEMOLISH) store.setDemolish(station, true)
+                areaView.show(id, station)
+                feedback.actionBar(id, "${areaKind.name.lowercase()} area set, ${it.volume} blocks")
+            }
+            .onFailure { feedback.actionBar(id, it.message ?: "Failed") }
     }
 
     private fun screwdriver(e: DomainPlayerInteractEvent, b: BlockContainer, kind: BlockKind) {
