@@ -1,10 +1,10 @@
 package net.craftoriya.redstoneIndustry.menu
 
 import net.craftoriya.adaptersLib.event.DomainEventBus
-import net.craftoriya.adaptersLib.event.domainevents.DomainMenuClickEvent
-import net.craftoriya.adaptersLib.event.domainevents.DomainMenuCloseEvent
-import net.craftoriya.adaptersLib.model.MenuContainer
-import net.craftoriya.adaptersLib.port.IMenuPort
+import net.craftoriya.adaptersLib.event.domainevents.menu.DomainMenuClickEvent
+import net.craftoriya.adaptersLib.event.domainevents.menu.DomainMenuCloseEvent
+import net.craftoriya.adaptersLib.model.menu.MenuContainer
+import net.craftoriya.adaptersLib.port.ui.IMenuPort
 import java.util.UUID
 
 typealias MenuHandler = (DomainMenuClickEvent, String) -> Unit

@@ -1,12 +1,12 @@
 package net.craftoriya.redstoneIndustry.recipe
 
 import net.craftoriya.adaptersLib.event.DomainEventBus
-import net.craftoriya.adaptersLib.event.domainevents.DomainFurnaceSmeltEvent
-import net.craftoriya.adaptersLib.event.domainevents.DomainFurnaceStartSmeltEvent
-import net.craftoriya.adaptersLib.event.domainevents.DomainPlayerJoinEvent
-import net.craftoriya.adaptersLib.event.domainevents.DomainPrepareItemCraftEvent
-import net.craftoriya.adaptersLib.model.RecipeContainer
-import net.craftoriya.adaptersLib.port.IRecipeBookPort
+import net.craftoriya.adaptersLib.event.domainevents.inventory.DomainFurnaceSmeltEvent
+import net.craftoriya.adaptersLib.event.domainevents.inventory.DomainFurnaceStartSmeltEvent
+import net.craftoriya.adaptersLib.event.domainevents.player.DomainPlayerJoinEvent
+import net.craftoriya.adaptersLib.event.domainevents.inventory.DomainPrepareItemCraftEvent
+import net.craftoriya.adaptersLib.model.item.RecipeContainer
+import net.craftoriya.adaptersLib.port.recipe.IRecipeBookPort
 
 class RecipeHandlers(
     private val bus: DomainEventBus,

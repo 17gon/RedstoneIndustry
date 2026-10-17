@@ -1,5 +1,7 @@
 package net.craftoriya.redstoneIndustry.tech
 
+import net.craftoriya.redstoneIndustry.tech.dto.TechTreeDto
+
 object TechExpander {
     fun expand(config: TechTreeDto): TechTree =
         TechTree(config.nodes.map { dto ->

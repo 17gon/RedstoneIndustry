@@ -1,7 +1,7 @@
 package net.craftoriya.redstoneIndustry.command
 
-import net.craftoriya.adaptersLib.model.CommandSpec
-import net.craftoriya.adaptersLib.model.commandSpec
+import net.craftoriya.adaptersLib.model.command.CommandSpec
+import net.craftoriya.adaptersLib.model.command.commandSpec
 
 object CommandSpecs {
     fun debug(): CommandSpec = commandSpec {

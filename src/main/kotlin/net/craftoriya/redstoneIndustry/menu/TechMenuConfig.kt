@@ -1,7 +1,7 @@
 package net.craftoriya.redstoneIndustry.menu
 
-import net.craftoriya.adaptersLib.model.ItemContainer
-import net.craftoriya.adaptersLib.model.MenuContainer
+import net.craftoriya.adaptersLib.model.item.ItemContainer
+import net.craftoriya.adaptersLib.model.menu.MenuContainer
 import org.spongepowered.configurate.objectmapping.ConfigSerializable
 
 @ConfigSerializable

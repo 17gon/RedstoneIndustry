@@ -1,6 +1,6 @@
 package net.craftoriya.redstoneIndustry.recipe
 
-import net.craftoriya.adaptersLib.model.RecipeContainer
+import net.craftoriya.adaptersLib.model.item.RecipeContainer
 import net.craftoriya.adaptersLib.recipe.RecipesConfig
 import net.craftoriya.adaptersLib.recipe.RecipeExpander
 

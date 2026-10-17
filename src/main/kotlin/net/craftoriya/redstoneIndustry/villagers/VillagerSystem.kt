@@ -1,23 +1,40 @@
 package net.craftoriya.redstoneIndustry.villagers
 
 import net.craftoriya.adaptersLib.event.DomainEventBus
-import net.craftoriya.adaptersLib.event.domainevents.DomainBlockChangeEvent
-import net.craftoriya.adaptersLib.event.domainevents.DomainVillagerTickEvent
-import net.craftoriya.adaptersLib.model.BlockChange
-import net.craftoriya.adaptersLib.model.EntityContainer
-import net.craftoriya.adaptersLib.model.LocationIContainer
-import net.craftoriya.adaptersLib.model.RecipeContainer
-import net.craftoriya.adaptersLib.model.Vec3I
-import net.craftoriya.adaptersLib.port.*
+import net.craftoriya.adaptersLib.event.domainevents.block.DomainBlockChangeEvent
+import net.craftoriya.adaptersLib.event.domainevents.villager.DomainVillagerTickEvent
+import net.craftoriya.adaptersLib.model.block.BlockChange
+import net.craftoriya.adaptersLib.model.entity.EntityContainer
+import net.craftoriya.adaptersLib.model.math.LocationIContainer
+import net.craftoriya.adaptersLib.model.item.RecipeContainer
+import net.craftoriya.adaptersLib.model.math.Vec3I
+import net.craftoriya.adaptersLib.port.entity.IEntityPort
+import net.craftoriya.adaptersLib.port.entity.IVillagerControlPort
+import net.craftoriya.adaptersLib.port.entity.IVillagerSnapshotPort
+import net.craftoriya.adaptersLib.port.system.ISchedulerPort
+import net.craftoriya.adaptersLib.port.ui.IOutlinePort
+import net.craftoriya.adaptersLib.port.ui.IPlayerFeedbackPort
+import net.craftoriya.adaptersLib.port.world.IBlockBreakPort
+import net.craftoriya.adaptersLib.port.world.IBlockDataPort
+import net.craftoriya.adaptersLib.port.world.IContainerPort
+import net.craftoriya.adaptersLib.port.world.IWorldQueryPort
 import net.craftoriya.redstoneIndustry.common.coords
-import net.craftoriya.redstoneIndustry.demolish.AreaKind
-import net.craftoriya.redstoneIndustry.demolish.AreaStore
-import net.craftoriya.redstoneIndustry.demolish.AreaView
+import net.craftoriya.redstoneIndustry.demolish.area.AreaKind
+import net.craftoriya.redstoneIndustry.demolish.area.AreaStore
+import net.craftoriya.redstoneIndustry.demolish.area.AreaView
 import net.craftoriya.redstoneIndustry.outline.OutlineStyles
-import net.craftoriya.redstoneIndustry.demolish.DemolishRoutine
+import net.craftoriya.redstoneIndustry.demolish.work.DemolishRoutine
 import net.craftoriya.redstoneIndustry.tools.StickToolService
+import net.craftoriya.redstoneIndustry.villagers.binding.BindingStore
 import net.craftoriya.redstoneIndustry.villagers.binding.BlockKind
 import net.craftoriya.redstoneIndustry.villagers.binding.BlockKinds
+import net.craftoriya.redstoneIndustry.villagers.container.ContainerFinder
+import net.craftoriya.redstoneIndustry.villagers.container.SmartRule
+import net.craftoriya.redstoneIndustry.villagers.container.StationLinkCache
+import net.craftoriya.redstoneIndustry.villagers.debug.DebugViewService
+import net.craftoriya.redstoneIndustry.villagers.sync.BlockSyncService
+import net.craftoriya.redstoneIndustry.villagers.work.VillagerWorkRoutine
+import net.craftoriya.redstoneIndustry.villagers.work.WorkAnimation
 import net.craftoriya.redstoneIndustry.villagers.work.WorkRecipeProvider
 import java.util.UUID
 
@@ -56,9 +73,11 @@ class VillagerSystem(
         scheduler,
         kinds,
         config.breakTimeFactor,
+        config.maxDemolishWorkers.coerceAtLeast(1),
         blockData
     )
-    private val routine = VillagerWorkRoutine(containers, links, recipes, WorkAnimation(villagers, scheduler), demolish::exclusive)
+    private val routine =
+        VillagerWorkRoutine(containers, links, recipes, WorkAnimation(villagers, scheduler), demolish::exclusive)
     private val debug = DebugViewService(store, links, outline, scheduler, areaView, outlineStyles)
     private val stick = StickToolService(store, feedback, debug, links, kinds, finder, areas, areaView)
 

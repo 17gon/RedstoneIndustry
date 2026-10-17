@@ -1,21 +1,24 @@
 package net.craftoriya.redstoneIndustry.tools
 
 import net.craftoriya.adaptersLib.event.DomainEventBus
-import net.craftoriya.adaptersLib.event.domainevents.DomainPlayerInteractEvent
-import net.craftoriya.adaptersLib.model.BlockContainer
-import net.craftoriya.adaptersLib.model.InteractAction
-import net.craftoriya.adaptersLib.model.LocationIContainer
-import net.craftoriya.adaptersLib.model.Vec3I
-import net.craftoriya.adaptersLib.port.IPlayerFeedbackPort
-import net.craftoriya.redstoneIndustry.demolish.AreaKind
-import net.craftoriya.redstoneIndustry.demolish.AreaStore
-import net.craftoriya.redstoneIndustry.demolish.AreaView
-import net.craftoriya.redstoneIndustry.villagers.*
+import net.craftoriya.adaptersLib.event.domainevents.player.DomainPlayerInteractEvent
+import net.craftoriya.adaptersLib.model.block.BlockContainer
+import net.craftoriya.adaptersLib.model.entity.InteractAction
+import net.craftoriya.adaptersLib.model.math.LocationIContainer
+import net.craftoriya.adaptersLib.model.math.Vec3I
+import net.craftoriya.adaptersLib.port.ui.IPlayerFeedbackPort
+import net.craftoriya.redstoneIndustry.demolish.area.AreaKind
+import net.craftoriya.redstoneIndustry.demolish.area.AreaStore
+import net.craftoriya.redstoneIndustry.demolish.area.AreaView
+import net.craftoriya.redstoneIndustry.villagers.binding.BindingStore
 import net.craftoriya.redstoneIndustry.villagers.binding.BlockKind
 import net.craftoriya.redstoneIndustry.villagers.binding.BlockKinds
 import net.craftoriya.redstoneIndustry.villagers.binding.ContainerData
 import net.craftoriya.redstoneIndustry.villagers.binding.ContainerMode
 import net.craftoriya.redstoneIndustry.villagers.binding.StationData
+import net.craftoriya.redstoneIndustry.villagers.container.ContainerFinder
+import net.craftoriya.redstoneIndustry.villagers.container.StationLinkCache
+import net.craftoriya.redstoneIndustry.villagers.debug.DebugViewService
 import java.util.UUID
 
 class StickToolService(
@@ -47,7 +50,7 @@ class StickToolService(
         }
 
         val block = event.block ?: return
-        val kind = kinds.of(block) ?: return
+        val kind = kinds.of(block)
 
         if (event.sneaking && event.action == InteractAction.RIGHT_BLOCK && kind == BlockKind.WORKSTATION) {
             feedback.actionBar(id, debug.showStation(id, block.location))

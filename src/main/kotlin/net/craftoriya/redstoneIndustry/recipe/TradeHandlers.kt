@@ -1,9 +1,9 @@
 package net.craftoriya.redstoneIndustry.recipe
 
 import net.craftoriya.adaptersLib.event.DomainEventBus
-import net.craftoriya.adaptersLib.event.domainevents.DomainVillagerInteractEvent
-import net.craftoriya.adaptersLib.port.ITradeBookPort
-import net.craftoriya.adaptersLib.model.TradeApplyMode
+import net.craftoriya.adaptersLib.event.domainevents.villager.DomainVillagerInteractEvent
+import net.craftoriya.adaptersLib.port.recipe.ITradeBookPort
+import net.craftoriya.adaptersLib.model.item.TradeApplyMode
 
 class TradeHandlers(
     private val bus: DomainEventBus,

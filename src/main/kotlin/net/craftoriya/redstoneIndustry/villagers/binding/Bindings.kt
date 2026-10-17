@@ -1,7 +1,7 @@
 package net.craftoriya.redstoneIndustry.villagers.binding
 
-import net.craftoriya.adaptersLib.model.BlockContainer
-import net.craftoriya.adaptersLib.model.LocationIContainer
+import net.craftoriya.adaptersLib.model.block.BlockContainer
+import net.craftoriya.adaptersLib.model.math.LocationIContainer
 
 enum class ContainerMode { AUTO, IN, OUT, IO, OFF }
 

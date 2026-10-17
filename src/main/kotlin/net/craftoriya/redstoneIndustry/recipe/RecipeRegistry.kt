@@ -1,9 +1,9 @@
 package net.craftoriya.redstoneIndustry.recipe
 
-import net.craftoriya.adaptersLib.model.CraftingGridContainer
-import net.craftoriya.adaptersLib.model.InventoryTypeDomain
-import net.craftoriya.adaptersLib.model.ItemContainer
-import net.craftoriya.adaptersLib.model.RecipeContainer
+import net.craftoriya.adaptersLib.model.item.CraftingGridContainer
+import net.craftoriya.adaptersLib.model.item.InventoryTypeDomain
+import net.craftoriya.adaptersLib.model.item.ItemContainer
+import net.craftoriya.adaptersLib.model.item.RecipeContainer
 
 class RecipeRegistry {
     private val recipes = mutableListOf<RecipeContainer>()

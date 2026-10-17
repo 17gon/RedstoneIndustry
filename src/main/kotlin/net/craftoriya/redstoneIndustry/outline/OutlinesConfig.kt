@@ -1,6 +1,6 @@
 package net.craftoriya.redstoneIndustry.outline
 
-import net.craftoriya.adaptersLib.model.OutlineStyle
+import net.craftoriya.adaptersLib.model.outline.OutlineStyle
 import org.spongepowered.configurate.objectmapping.ConfigSerializable
 
 

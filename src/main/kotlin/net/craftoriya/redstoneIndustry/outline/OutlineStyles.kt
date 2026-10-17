@@ -1,8 +1,8 @@
 package net.craftoriya.redstoneIndustry.outline
 
-import net.craftoriya.adaptersLib.model.OutlineShape
-import net.craftoriya.adaptersLib.model.OutlineStyle
-import net.craftoriya.redstoneIndustry.villagers.tool.Rgb
+import net.craftoriya.adaptersLib.model.outline.OutlineShape
+import net.craftoriya.adaptersLib.model.outline.OutlineStyle
+import net.craftoriya.redstoneIndustry.common.Rgb
 
 class OutlineStyles(config: OutlinesConfig) {
     private val map = DEFAULTS + config.styles

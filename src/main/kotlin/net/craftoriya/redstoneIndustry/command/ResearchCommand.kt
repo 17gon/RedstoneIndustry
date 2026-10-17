@@ -1,8 +1,8 @@
 package net.craftoriya.redstoneIndustry.command
 
-import net.craftoriya.adaptersLib.event.domainevents.DomainCommandEvent
+import net.craftoriya.adaptersLib.event.domainevents.player.DomainCommandEvent
 import net.craftoriya.redstoneIndustry.menu.ResearchMenu
-import net.craftoriya.redstoneIndustry.tech.TechStates
+import net.craftoriya.redstoneIndustry.tech.state.TechStates
 import net.craftoriya.redstoneIndustry.tech.TechTree
 
 class ResearchCommand(

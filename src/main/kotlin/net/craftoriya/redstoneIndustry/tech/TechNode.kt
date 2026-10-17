@@ -1,6 +1,6 @@
 package net.craftoriya.redstoneIndustry.tech
 
-import net.craftoriya.adaptersLib.model.ItemContainer
+import net.craftoriya.adaptersLib.model.item.ItemContainer
 
 
 data class TechNode(

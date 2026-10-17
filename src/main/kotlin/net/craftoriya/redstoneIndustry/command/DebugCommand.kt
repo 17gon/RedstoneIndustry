@@ -1,10 +1,10 @@
 package net.craftoriya.redstoneIndustry.command
 
-import net.craftoriya.adaptersLib.event.domainevents.DomainCommandEvent
-import net.craftoriya.adaptersLib.model.LocationIContainer
-import net.craftoriya.adaptersLib.model.Vec3I
+import net.craftoriya.adaptersLib.event.domainevents.player.DomainCommandEvent
+import net.craftoriya.adaptersLib.model.math.LocationIContainer
+import net.craftoriya.adaptersLib.model.math.Vec3I
 import net.craftoriya.redstoneIndustry.common.Trace
-import net.craftoriya.redstoneIndustry.demolish.AreaKind
+import net.craftoriya.redstoneIndustry.demolish.area.AreaKind
 import net.craftoriya.redstoneIndustry.villagers.VillagerSystem
 
 class DebugCommand(

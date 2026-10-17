@@ -6,5 +6,6 @@ import org.spongepowered.configurate.objectmapping.ConfigSerializable
 data class VillagerConfig(
     val containerRange: Int = 8,
     val maxRegionVolume: Int = 32768,
-    val breakTimeFactor: Double = 1.0
+    val breakTimeFactor: Double = 1.0,
+    val maxDemolishWorkers: Int = 4
 )

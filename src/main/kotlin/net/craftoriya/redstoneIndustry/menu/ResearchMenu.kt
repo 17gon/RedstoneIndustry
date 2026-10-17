@@ -1,7 +1,7 @@
 package net.craftoriya.redstoneIndustry.menu
 
-import net.craftoriya.adaptersLib.model.ItemContainer
-import net.craftoriya.adaptersLib.model.MenuContainer
+import net.craftoriya.adaptersLib.model.item.ItemContainer
+import net.craftoriya.adaptersLib.model.menu.MenuContainer
 import net.craftoriya.redstoneIndustry.menu.ResearchPalette.COST
 import net.craftoriya.redstoneIndustry.menu.ResearchPalette.FRAME
 import net.craftoriya.redstoneIndustry.menu.ResearchPalette.LEADS_TO
@@ -9,7 +9,7 @@ import net.craftoriya.redstoneIndustry.menu.ResearchPalette.LOCKED
 import net.craftoriya.redstoneIndustry.menu.ResearchPalette.NODE
 import net.craftoriya.redstoneIndustry.menu.ResearchPalette.REQUIRES
 import net.craftoriya.redstoneIndustry.tech.TechNode
-import net.craftoriya.redstoneIndustry.tech.TechStates
+import net.craftoriya.redstoneIndustry.tech.state.TechStates
 import net.craftoriya.redstoneIndustry.tech.TechTree
 import java.util.UUID
 
